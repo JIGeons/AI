@@ -3,7 +3,7 @@ import pyupbit
 import datetime
 import time
 
-access = "BgywsMVAJyaGdKVXgSUpx56UOA2BXhVkjNtWy0"
+access = "BgywsMVAJyaGdKVXgSUpx56UOA2BXhVUlkjNtWy0"
 secret = "eafcO54xNiwAJzKSEEmuekZcvEAP2BOrebuOuk6P"
 
 def get_transaction_amount(date, num):
@@ -23,6 +23,7 @@ def get_transaction_amount(date, num):
         try:
             # 순위가 바뀔 수 있으니 당일은 포함 X
             for i in range(2,9):
+                time.sleep(0.005)
                 volume_money += df['close'].iloc[-i] * df['volume'].iloc[-i]
 
         except (TypeError, KeyError):
@@ -118,7 +119,11 @@ while True:
 
     balances = upbit.get_balances()
 
-    my_money = float(balances[0]['balance'])    # 내 원화
+    my_money = 0.0
+
+    if balances:
+        my_money = float(balances[0]['balance'])    # 내 원화
+
     money_rate = 1.0                            # 투자 비중
     money = my_money * money_rate               # 코인에 할당할 비용
     money = math.floor(money)                   # 소수점 버림
