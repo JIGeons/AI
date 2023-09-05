@@ -6,7 +6,7 @@ import time
 access = "BgywsMVAJyaGdKVXgSUpx56UOA2BXhVUlkjNtWy0"
 secret = "eafcO54xNiwAJzKSEEmuekZcvEAP2BOrebuOuk6P"
 
-def get_transaction_amount(date, num, newdate):
+def get_transaction_amount(date, num, new_date):
     tickers = pyupbit.get_tickers("KRW")    # KRW를 통해 거래되는 코인만 불러오기
     dic_ticker = {}
 
