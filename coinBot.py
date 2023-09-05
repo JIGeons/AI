@@ -6,7 +6,7 @@ import time
 access = "BgywsMVAJyaGdKVXgSUpx56UOA2BXhVUlkjNtWy0"
 secret = "eafcO54xNiwAJzKSEEmuekZcvEAP2BOrebuOuk6P"
 
-def get_transaction_amount(date, num):
+def get_transaction_amount(date, num, newdate):
     tickers = pyupbit.get_tickers("KRW")    # KRW를 통해 거래되는 코인만 불러오기
     dic_ticker = {}
 
@@ -17,13 +17,12 @@ def get_transaction_amount(date, num):
     print("코인 목록 개수:", num_of_tickers)    
 
     for ticker in tickers:
-        df = pyupbit.get_ohlcv(ticker, date)    # date 기간의 거래대금을 구해준다
+        df = pyupbit.get_ohlcv(ticker, date, to=new_date, count=10)    # date 기간의 거래대금을 구해준다
         volume_money = 0.0
         
         try:
             # 순위가 바뀔 수 있으니 당일은 포함 X
             for i in range(2,9):
-                time.sleep(0.005)
                 volume_money += df['close'].iloc[-i] * df['volume'].iloc[-i]
 
         except (TypeError, KeyError):
@@ -99,11 +98,17 @@ def get_revenue_rate(balances, ticker):
 
 upbit = pyupbit.Upbit(access, secret)       # 객체 생성
 
-tickers = get_transaction_amount("day", 10)  # 거래대금 상위 10개 코인 선정
-print(tickers)
-
 # 현재 날짜를 저장하는 변수
 current_date = datetime.datetime.now().date()
+
+tickers = get_transaction_amount("day", 10, current_date)  # 거래대금 상위 10개 코인 선정
+print(tickers)
+
+money_rate = 1.0                            # 투자 비중
+target_revenue = 1.0            # 목표 수익률(1.0 %)
+target_loss = 3.0               # 3.0% 손실 날시 매도
+#   division_amount = 0.3           # 분할 매도 비중
+
 while True:
     # 현재 날짜를 다시 확인
     new_date = datetime.datetime.now().date()
@@ -114,26 +119,17 @@ while True:
 
     # 새로운 날짜가 시작되면 해당 블록  실행
     if new_date != current_date:
-        tickers = get_transaction_amount("day", 10)  # 거래대금 상위 10개 코인 선정
+        tickers = get_transaction_amount("day", 10, new_date)  # 거래대금 상위 10개 코인 선정
         current_date = new_date
 
     balances = upbit.get_balances()
 
-    my_money = 0.0
-
-    if balances:
-        my_money = float(balances[0]['balance'])    # 내 원화
-
-    money_rate = 1.0                            # 투자 비중
+    my_money = float(balances[0]['balance'])    # 내 원화
     money = my_money * money_rate               # 코인에 할당할 비용
     money = math.floor(money)                   # 소수점 버림
 
     #   count_coin = len(tickers)       # 목표 코인 개수
     #   money /= count_coin             # 각각의 코인에 공평하게 자본 분배
-
-    target_revenue = 1.0            # 목표 수익률(1.0 %)
-    #   division_amount = 0.3           # 분할 매도 비중
-    target_loss = 3.0               # 1.5% 손실 날시 매도
 
     for target_ticker in tickers:
         ticker_rate = get_revenue_rate(balances, target_ticker)
