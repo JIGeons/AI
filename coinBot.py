@@ -97,6 +97,7 @@ def get_revenue_rate(balances, ticker):
 
     return revenue_rate
 
+
 upbit = pyupbit.Upbit(access, secret)       # 객체 생성
 
 # 현재 날짜를 저장하는 변수
@@ -105,10 +106,11 @@ current_date = datetime.datetime.now().date()
 tickers = get_transaction_amount("day", 10, current_date)  # 거래대금 상위 10개 코인 선정
 print(tickers)
 
-money_rate = 1.0                            # 투자 비중
-target_revenue = 1.1            # 목표 수익률(1.0 %)
-target_loss = -3.0               # 3.0% 손실 날시 매도
-#   division_amount = 0.3           # 분할 매도 비중
+money_rate = 0.35           # 투자 비중
+target_revenue = 1.1        # 목표 수익률(1.0 %)
+target_loss = -3.0          # 3.0% 손실 날시 매도
+min_ravenue = 0.45          # 최소 수익률
+#   division_amount = 0.3   # 분할 매도 비중
 
 while True:
     # 현재 날짜를 다시 확인
@@ -148,17 +150,18 @@ while True:
 
             # 매도 조건 충족1
             if rsi14 < 70 and before_rsi14 > 70:
-                amount = upbit.get_balance(target_ticker)      # 현재 비트코인 보유 수량
-                upbit.sell_market_order(target_ticker, amount) # 시장가에 매도
-                balances = upbit.get_balances()         # 매도했으니 잔고를 최신화!
-                print(f"1. 매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
+                if ticker_rate > min_ravenue:
+                    amount = upbit.get_balance(target_ticker)      # 현재 비트코인 보유 수량
+                    upbit.sell_market_order(target_ticker, amount) # 시장가에 매도
+                    balances = upbit.get_balances()         # 매도했으니 잔고를 최신화!
+                    print(f"1. 매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
 
             # 매도 조건 충족2 (과매수 구간일 때)
             elif rsi14 > 70:
                 # 목표 수익률을 만족한다면
                 if ticker_rate >= target_revenue:
                     amount = upbit.get_balance(target_ticker)   # 현재 코인 보유 수량
-                    sell_amount = amount                          # 분할 매도 비중
+                    sell_amount = amount                        # 분할 매도 비중
                     upbit.sell_market_order(target_ticker, sell_amount)  # 시장가에 매도
                     balances = upbit.get_balances()             # 매도했으니 잔고를 최신화
                     print(f"2. 매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
@@ -166,7 +169,7 @@ while True:
             # 매도 조건 충족3 (수익률 달성 했을 시)
             elif ticker_rate >= target_revenue:
                 amount = upbit.get_balance(target_ticker)   # 현재 코인 보유 수량
-                sell_amount = amount                          # 분할 매도 비중
+                sell_amount = amount                        # 분할 매도 비중
                 upbit.sell_market_order(target_ticker, sell_amount)  # 시장가에 매도
                 balances = upbit.get_balances()             # 매도했으니 잔고를 최신화
                 print(f"3. 매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
@@ -174,13 +177,26 @@ while True:
             # 매도 조건 충족4 (3.0% 이하로 내려갈 시 손절)
             elif ticker_rate < target_loss:
                 amount = upbit.get_balance(target_ticker)   # 현재 코인 보유 수량
-                sell_amount = amount                          # 분할 매도 비중
+                sell_amount = amount                        # 분할 매도 비중
                 try :
                     #upbit.sell_market_order(target_ticker, sell_amount)  # 시장가에 매도
                     balances = upbit.get_balances()             # 매도했으니 잔고를 최신화
                     print(f"4. 매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
                 except Exception as e:
                     print("매도 실패")
+
+            # 추가 매수
+            elif before_rsi14 < 30:
+                if rsi14 > 30 :
+                    buy_money = (money - (money * fee))   # 본인이 가지고 있는 금액에 15% 추가 매수
+                    if buy_money < 5000 or (money - buy_money) < 5000:
+                        buy_money = upbit.get_balance('KRW')
+                    try :
+                        upbit.buy_market_order(target_ticker, buy_money)   # 시장가에 비트코인을 매수
+                        balances = upbit.get_balances()         # 매수했으니 잔고를 최신화
+                        print(f"추가 매수 - {target_ticker}: 가격 {buy_money}에 {buy_money / pyupbit.get_current_price(target_ticker)}개 구매")
+                    except Exception as e:
+                        print("매수 실패")
 
         else:
             # 매수 조건 충족
