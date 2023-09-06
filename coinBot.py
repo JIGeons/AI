@@ -191,6 +191,7 @@ while True:
                     buy_money = (money - (money * fee))   # 본인이 가지고 있는 금액에 15% 추가 매수
                     if buy_money < 5000 or (money - buy_money) < 5000:
                         buy_money = upbit.get_balance('KRW')
+                        buy_money = (buy_money - (buy_money * fee))
                     try :
                         upbit.buy_market_order(target_ticker, buy_money)   # 시장가에 비트코인을 매수
                         balances = upbit.get_balances()         # 매수했으니 잔고를 최신화
@@ -203,6 +204,10 @@ while True:
             if before_rsi14 < 30:
                 if rsi14 > 30 :
                     buy_money = money - (money * fee)
+                    if buy_money < 5000 or (money - buy_money) < 5000:
+                        buy_money = upbit.get_balance('KRW')
+                        buy_money = (buy_money - (buy_money * fee))
+                        
                     try :
                         upbit.buy_market_order(target_ticker, buy_money)   # 시장가에 비트코인을 매수
                         balances = upbit.get_balances()         # 매수했으니 잔고를 최신화
