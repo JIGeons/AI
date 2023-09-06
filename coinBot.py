@@ -138,12 +138,10 @@ while True:
 
     for target_ticker in tickers:
         ticker_rate = get_revenue_rate(balances, target_ticker)
-        df_minute = pyupbit.get_ohlcv(target_ticker, interval="1")     # 1분봉 정보
-        rsi = get_rsi(df_minute, 14)
+        df_minute = pyupbit.get_ohlcv(target_ticker, interval="minute1")     # 1분봉 정보
+        rsi = get_rsi(df_minute, 15)
         rsi14 = rsi.iloc[-1]                        # 당일 RSI14 
-        before_rsi14 = rsi.iloc[-2]                 # 작일 RSI14 
-
-        #print(f"{target_ticker}코인의 현재 rsi : {rsi14}, 1분전 rsi : {before_rsi14}")
+        before_rsi14 = rsi.iloc[-2]                 # 작일 RSI14         
 
         if has_coin(target_ticker, balances):
             ticker_rate = get_revenue_rate(balances, target_ticker) # 수익률 확인
@@ -178,7 +176,7 @@ while True:
                 amount = upbit.get_balance(target_ticker)   # 현재 코인 보유 수량
                 sell_amount = amount                          # 분할 매도 비중
                 try :
-                    upbit.sell_market_order(target_ticker, sell_amount)  # 시장가에 매도
+                    #upbit.sell_market_order(target_ticker, sell_amount)  # 시장가에 매도
                     balances = upbit.get_balances()             # 매도했으니 잔고를 최신화
                     print(f"4. 매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
                 except Exception as e:
@@ -186,12 +184,12 @@ while True:
 
         else:
             # 매수 조건 충족
-            #print(f"{target_ticker} - rsi14 : {rsi14}, before_rsi14 : {before_rsi14}")
-            if rsi14 > 30 and before_rsi14 < 30:
-                buy_money = money - (money * fee)
-                try :
-                    upbit.buy_market_order(target_ticker, buy_money)   # 시장가에 비트코인을 매수
-                    balances = upbit.get_balances()         # 매수했으니 잔고를 최신화
-                    print(f"매수 - {target_ticker}: 가격 {buy_money}에 {buy_money / pyupbit.get_current_price(target_ticker)}개 구매")
-                except Exception as e:
-                    print("매수 실패")
+            if before_rsi14 < 30:
+                if rsi14 > 30 :
+                    buy_money = money - (money * fee)
+                    try :
+                        upbit.buy_market_order(target_ticker, buy_money)   # 시장가에 비트코인을 매수
+                        balances = upbit.get_balances()         # 매수했으니 잔고를 최신화
+                        print(f"매수 - {target_ticker}: 가격 {buy_money}에 {buy_money / pyupbit.get_current_price(target_ticker)}개 구매")
+                    except Exception as e:
+                        print("매수 실패")
