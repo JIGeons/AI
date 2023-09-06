@@ -106,8 +106,8 @@ tickers = get_transaction_amount("day", 10, current_date)  # 거래대금 상위
 print(tickers)
 
 money_rate = 1.0                            # 투자 비중
-target_revenue = 1.0            # 목표 수익률(1.0 %)
-target_loss = 3.0               # 3.0% 손실 날시 매도
+target_revenue = 1.1            # 목표 수익률(1.0 %)
+target_loss = -3.0               # 3.0% 손실 날시 매도
 #   division_amount = 0.3           # 분할 매도 비중
 
 while True:
@@ -125,11 +125,13 @@ while True:
 
     balances = upbit.get_balances()
 
+    #print(f"나의 계좌 정보 : {balances}")
+
     my_money = float(balances[0]['balance'])    # 내 원화
     money = my_money * money_rate               # 코인에 할당할 비용
     money = math.floor(money)                   # 소수점 버림
 
-    fee = 0.0005        # 업비트의 수수료
+    fee = 0.0005
 
     #   count_coin = len(tickers)       # 목표 코인 개수
     #   money /= count_coin             # 각각의 코인에 공평하게 자본 분배
@@ -141,6 +143,8 @@ while True:
         rsi14 = rsi.iloc[-1]                        # 당일 RSI14 
         before_rsi14 = rsi.iloc[-2]                 # 작일 RSI14 
 
+        #print(f"{target_ticker}코인의 현재 rsi : {rsi14}, 1분전 rsi : {before_rsi14}")
+
         if has_coin(target_ticker, balances):
             ticker_rate = get_revenue_rate(balances, target_ticker) # 수익률 확인
 
@@ -149,7 +153,7 @@ while True:
                 amount = upbit.get_balance(target_ticker)      # 현재 비트코인 보유 수량
                 upbit.sell_market_order(target_ticker, amount) # 시장가에 매도
                 balances = upbit.get_balances()         # 매도했으니 잔고를 최신화!
-                print(f"매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
+                print(f"1. 매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
 
             # 매도 조건 충족2 (과매수 구간일 때)
             elif rsi14 > 70:
@@ -159,7 +163,7 @@ while True:
                     sell_amount = amount                          # 분할 매도 비중
                     upbit.sell_market_order(target_ticker, sell_amount)  # 시장가에 매도
                     balances = upbit.get_balances()             # 매도했으니 잔고를 최신화
-                    print(f"매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
+                    print(f"2. 매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
             
             # 매도 조건 충족3 (수익률 달성 했을 시)
             elif ticker_rate >= target_revenue:
@@ -167,18 +171,22 @@ while True:
                 sell_amount = amount                          # 분할 매도 비중
                 upbit.sell_market_order(target_ticker, sell_amount)  # 시장가에 매도
                 balances = upbit.get_balances()             # 매도했으니 잔고를 최신화
-                print(f"매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
+                print(f"3. 매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
 
-            # 매도 조건 충족4 (1.5% 이하로 내려갈 시 손절)
-            elif ticker_rate <= target_loss:
+            # 매도 조건 충족4 (3.0% 이하로 내려갈 시 손절)
+            elif ticker_rate < target_loss:
                 amount = upbit.get_balance(target_ticker)   # 현재 코인 보유 수량
                 sell_amount = amount                          # 분할 매도 비중
-                upbit.sell_market_order(target_ticker, sell_amount)  # 시장가에 매도
-                balances = upbit.get_balances()             # 매도했으니 잔고를 최신화
-                print(f"매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
+                try :
+                    upbit.sell_market_order(target_ticker, sell_amount)  # 시장가에 매도
+                    balances = upbit.get_balances()             # 매도했으니 잔고를 최신화
+                    print(f"4. 매도 - {target_ticker}: 가격 {amount * pyupbit.get_current_price(target_ticker)}에 {amount}개 판매, 수익률 : {ticker_rate}%")
+                except Exception as e:
+                    print("매도 실패")
 
         else:
             # 매수 조건 충족
+            #print(f"{target_ticker} - rsi14 : {rsi14}, before_rsi14 : {before_rsi14}")
             if rsi14 > 30 and before_rsi14 < 30:
                 buy_money = money - (money * fee)
                 try :
