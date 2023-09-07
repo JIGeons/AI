@@ -192,7 +192,7 @@ while True:
             elif before_rsi14 < 30:
                 if rsi14 > 30 :
                     buy_money = (money - (money * fee))   # 본인이 가지고 있는 금액에 15% 추가 매수
-                    if buy_money < 5000 or (money - buy_money) < 5000:
+                    if buy_money < 5000 or (my_money - buy_money) < 5000:
                         buy_money = upbit.get_balance('KRW')
                         buy_money = (buy_money - (buy_money * fee))
                     try :
@@ -207,7 +207,7 @@ while True:
             if before_rsi14 < 30:
                 if rsi14 > 30 :
                     buy_money = money - (money * fee)
-                    if buy_money < 5000 or (money - buy_money) < 5000:
+                    if buy_money < 5000 or (my_money - buy_money) < 5000:
                         buy_money = upbit.get_balance('KRW')
                         buy_money = (buy_money - (buy_money * fee))
                         
