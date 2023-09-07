@@ -18,7 +18,10 @@ def get_transaction_amount(date, num, new_date):
     for ticker in tickers:
         df = pyupbit.get_ohlcv(ticker, date, to=new_date, count=10)    # date 기간의 거래대금을 구해준다
         volume_money = 0.0
-        
+
+        if ticker == "KRW-BTC":
+            continue
+            
         try:
             # 순위가 바뀔 수 있으니 당일은 포함 X
             for i in range(2,9):
