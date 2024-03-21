@@ -2,8 +2,8 @@ import math
 import pyupbit
 import datetime
 
-access = "BgywsMVAJyaGdKVXgSUpx56UOA2BXhVUlkjNtWy0"
-secret = "eafcO54xNiwAJzKSEEmuekZcvEAP2BOrebuOuk6P"
+access = "###"
+secret = "###"
 
 def get_transaction_amount():
     coin_list = {"KRW-BTC", "KRW-BCH", "KRW-XRP", "KRW-GRS", "KRW-RFR"}
